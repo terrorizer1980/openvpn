@@ -35,6 +35,7 @@
 #include "ssl_verify.h"
 #include "ssl_ncp.h"
 #include "manage.h"
+#include "plugin.h"
 
 #include "memdbg.h"
 
@@ -86,6 +87,29 @@ receive_auth_failed(struct context *c, const struct buffer *buffer)
             }
             c->sig->signal_text = "auth-failure";
         }
+
+        if (plugin_defined(c->plugins, OPENVPN_PLUGIN_AUTH_FAILED))
+        {
+            struct argv argv = argv_new();
+            const char *reason = NULL;
+            struct buffer buf = *buffer;
+            if (buf_string_compare_advance(&buf, "AUTH_FAILED,") && BLEN(&buf))
+            {
+                reason = BSTR(&buf);
+                setenv_str(c->c2.es, "auth_failed_reason", reason);
+            }
+
+            if (plugin_call(c->plugins, OPENVPN_PLUGIN_AUTH_FAILED, &argv, NULL, c->c2.es) != OPENVPN_PLUGIN_FUNC_SUCCESS)
+            {
+                msg(M_WARN, "WARNING: authfailed plugin call failed");
+            }
+
+            if (reason)
+            {
+                setenv_del(c->c2.es, "auth_failed_reason");
+            }
+        }
+
 #ifdef ENABLE_MANAGEMENT
         if (management)
         {
