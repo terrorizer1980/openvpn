@@ -904,6 +904,58 @@ key_state_test_auth_control_file(struct key_state *ks)
     return ACF_DISABLED;
 }
 
+/*
+ * auth_failure_reason_file functions
+ */
+
+void
+key_state_rm_auth_failure_reason_file(struct key_state *ks)
+{
+    if (ks && ks->auth_failure_reason_file)
+    {
+        platform_unlink(ks->auth_failure_reason_file);
+        free(ks->auth_failure_reason_file);
+        ks->auth_failure_reason_file = NULL;
+    }
+}
+
+static bool
+key_state_gen_auth_failure_reason_file(struct key_state *ks, const struct tls_options *opt)
+{
+    struct gc_arena gc = gc_new();
+
+    key_state_rm_auth_failure_reason_file(ks);
+    const char *acf = create_temp_file(opt->tmp_dir, "afrf", &gc);
+    if (acf)
+    {
+        ks->auth_failure_reason_file = string_alloc(acf, NULL);
+        setenv_str(opt->es, "auth_failure_reason_file", ks->auth_failure_reason_file);
+    }
+
+    gc_free(&gc);
+    return acf;
+}
+
+static char *
+key_state_read_auth_failure_reason_file(struct key_state *ks)
+{
+    char *line = NULL;
+    size_t line_len = 0;
+    if (ks && ks->auth_failure_reason_file)
+    {
+        FILE *fp = fopen(ks->auth_failure_reason_file, "r");
+        if (fp)
+        {
+            if (getline(&line, &line_len, fp) < 0)
+            {
+                line = NULL;
+            }
+            fclose(fp);
+        }
+    }
+    return line;
+}
+
 #endif /* ifdef PLUGIN_DEF_AUTH */
 
 /*
@@ -961,6 +1013,7 @@ tls_authentication_status(struct tls_multi *multi, const int latency)
                 if (ks->authenticated > KS_AUTH_FALSE)
                 {
 #ifdef ENABLE_DEF_AUTH
+                    char *reason = NULL;
                     unsigned int s1 = ACF_DISABLED;
                     unsigned int s2 = ACF_DISABLED;
 #ifdef PLUGIN_DEF_AUTH
@@ -986,6 +1039,12 @@ tls_authentication_status(struct tls_multi *multi, const int latency)
                             break;
 
                         case ACF_FAILED:
+#ifdef PLUGIN_DEF_AUTH
+                            reason = key_state_read_auth_failure_reason_file(ks);
+                            auth_set_client_reason(multi, reason);
+                            free(reason);
+                            reason = NULL;
+#endif /* PLUGIN_DEF_AUTH */
                             ks->authenticated = KS_AUTH_FALSE;
                             break;
 
@@ -1147,6 +1206,15 @@ verify_user_pass_plugin(struct tls_session *session, struct tls_multi *multi,
             "could not create deferred auth control file", __func__);
         return retval;
     }
+
+    /* generate filename for deferred auth failure reason file */
+    if (!key_state_gen_auth_failure_reason_file(ks, session->opt))
+    {
+        key_state_rm_auth_failure_reason_file(ks);
+        msg (D_TLS_ERRORS, "TLS Auth Error (%s): "
+                "could not create deferred auth failure reason file", __func__);
+        goto cleanup;
+    }
 #endif
 
     /* call command */
@@ -1157,6 +1225,7 @@ verify_user_pass_plugin(struct tls_session *session, struct tls_multi *multi,
     if (retval != OPENVPN_PLUGIN_FUNC_DEFERRED)
     {
         key_state_rm_auth_control_file(ks);
+        key_state_rm_auth_failure_reason_file(ks);
     }
 #endif
 
