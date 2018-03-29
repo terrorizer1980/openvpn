@@ -995,6 +995,7 @@ key_state_free(struct key_state *ks, bool clear)
 
 #ifdef PLUGIN_DEF_AUTH
     key_state_rm_auth_control_file(ks);
+    key_state_rm_auth_failure_reason_file(ks);
 #endif
 
     if (clear)
@@ -1313,7 +1314,9 @@ tls_multi_free(struct tls_multi *multi, bool clear)
 {
     ASSERT(multi);
 
-    auth_set_client_reason(multi, NULL);
+#ifdef ENABLE_DEF_AUTH
+    tls_def_auth_set_client_reason(multi, NULL);
+#endif
 
     free(multi->peer_info);
 

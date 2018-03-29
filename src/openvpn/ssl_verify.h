@@ -96,6 +96,13 @@ int tls_authentication_status(struct tls_multi *multi, const int latency);
 void key_state_rm_auth_control_file(struct key_state *ks);
 
 /**
+ * Remove the given key state's auth failure reason file, if it exists.
+ *
+ * @param ks    The key state the remove the file for
+ */
+void key_state_rm_auth_failure_reason_file(struct key_state *ks);
+
+/**
  * Frees the given set of certificate hashes.
  *
  * @param chs   The certificate hash set to free.
@@ -223,7 +230,10 @@ struct x509_track
  */
 #ifdef MANAGEMENT_DEF_AUTH
 bool tls_authenticate_key(struct tls_multi *multi, const unsigned int mda_key_id, const bool auth, const char *client_reason);
+#endif
 
+#ifdef ENABLE_DEF_AUTH
+void tls_def_auth_set_client_reason(struct tls_multi *multi, const char *client_reason);
 #endif
 
 /**
