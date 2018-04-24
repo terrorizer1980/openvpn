@@ -88,7 +88,7 @@ typedef unsigned long ptr_type;
 /*
  * In how many seconds does client re-send PUSH_REQUEST if we haven't yet received a reply
  */
-#define PUSH_REQUEST_INTERVAL 5
+#define PUSH_REQUEST_INTERVAL 1
 
 /*
  * A sort of pseudo-filename for data provided inline within
