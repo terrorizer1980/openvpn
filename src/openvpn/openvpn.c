@@ -35,6 +35,10 @@
 #include "win32.h"
 #include "platform.h"
 
+#include "pthread.h"
+#include "unistd.h"
+#include "stdio.h"
+
 #include "memdbg.h"
 
 #define P2P_CHECK_SIG() EVENT_LOOP_CHECK_SIGNAL(c, process_signal_p2p, c);
@@ -105,6 +109,35 @@ tunnel_point_to_point(struct context *c)
 
 #undef PROCESS_SIGNAL_P2P
 
+void*
+wait_for_stdin_close(void* _)
+{
+    char input_byte;
+    int bytes_read = 1;
+
+    while (bytes_read != 0)
+    {
+        bytes_read = read(STDIN_FILENO, &input_byte, 1);
+        if (bytes_read == -1) {
+            perror("failed to read from stdin");
+        }
+    }
+    siginfo_static.signal_received = SIGTERM;
+    return NULL;
+}
+
+static pthread_t shutdown_thread;
+
+void
+start_shutdown_listener()
+{
+    int err = 0;
+    err = pthread_create(&shutdown_thread, NULL, &wait_for_stdin_close, NULL);
+    if (err != 0) {
+        perror("failed to initialize shutdown thread thread\n");
+        return;
+    }
+}
 
 /**************************************************************************/
 /**
@@ -142,6 +175,7 @@ openvpn_main(int argc, char *argv[])
 #endif
 
     CLEAR(c);
+    start_shutdown_listener();
 
     /* signify first time for components which can
      * only be initialized once per program instantiation. */
