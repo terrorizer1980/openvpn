@@ -199,6 +199,7 @@ struct key_state
     unsigned int auth_control_status;
     time_t acf_last_mod;
     char *auth_control_file;
+    char *auth_failure_reason_file;
 #endif
 #endif
 };
