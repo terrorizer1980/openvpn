@@ -10,6 +10,6 @@ m4_append([PRODUCT_VERSION], [PRODUCT_VERSION_PATCH], [[]])
 define([PRODUCT_BUGREPORT], [openvpn-users@lists.sourceforge.net])
 define([PRODUCT_VERSION_RESOURCE], [2,5,0,8])
 dnl define the TAP version
-define([PRODUCT_TAP_WIN_COMPONENT_ID], [tap0901])
+define([PRODUCT_TAP_WIN_COMPONENT_ID], [tapmullvad0901])
 define([PRODUCT_TAP_WIN_MIN_MAJOR], [9])
 define([PRODUCT_TAP_WIN_MIN_MINOR], [9])
