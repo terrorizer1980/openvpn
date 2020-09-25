@@ -1314,9 +1314,7 @@ tls_multi_free(struct tls_multi *multi, bool clear)
 {
     ASSERT(multi);
 
-#ifdef ENABLE_DEF_AUTH
-    tls_def_auth_set_client_reason(multi, NULL);
-#endif
+    auth_set_client_reason(multi, NULL);
 
     free(multi->peer_info);
 

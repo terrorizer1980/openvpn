@@ -232,10 +232,6 @@ struct x509_track
 bool tls_authenticate_key(struct tls_multi *multi, const unsigned int mda_key_id, const bool auth, const char *client_reason);
 #endif
 
-#ifdef ENABLE_DEF_AUTH
-void tls_def_auth_set_client_reason(struct tls_multi *multi, const char *client_reason);
-#endif
-
 /**
  * Sets the reason why authentication of a client failed. This be will send to the client
  * when the AUTH_FAILED message is sent

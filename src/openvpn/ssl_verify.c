@@ -811,9 +811,8 @@ cleanup:
 #define ACF_FAILED    3
 #endif
 
-#ifdef ENABLE_DEF_AUTH
 void
-tls_def_auth_set_client_reason(struct tls_multi *multi, const char *client_reason)
+auth_set_client_reason(struct tls_multi *multi, const char *client_reason)
 {
     if (multi->client_reason)
     {
@@ -825,7 +824,6 @@ tls_def_auth_set_client_reason(struct tls_multi *multi, const char *client_reaso
         multi->client_reason = string_alloc(client_reason, NULL);
     }
 }
-#endif /* ifdef ENABLE_DEF_AUTH */
 
 #ifdef MANAGEMENT_DEF_AUTH
 
@@ -1043,7 +1041,7 @@ tls_authentication_status(struct tls_multi *multi, const int latency)
                         case ACF_FAILED:
 #ifdef PLUGIN_DEF_AUTH
                             reason = key_state_read_auth_failure_reason_file(ks);
-                            tls_def_auth_set_client_reason(multi, reason);
+                            auth_set_client_reason(multi, reason);
                             free(reason);
                             reason = NULL;
 #endif /* PLUGIN_DEF_AUTH */
@@ -1091,7 +1089,7 @@ tls_authenticate_key(struct tls_multi *multi, const unsigned int mda_key_id, con
     if (multi)
     {
         int i;
-        tls_def_auth_set_client_reason(multi, client_reason);
+        auth_set_client_reason(multi, client_reason);
         for (i = 0; i < KEY_SCAN_SIZE; ++i)
         {
             struct key_state *ks = multi->key_scan[i];
