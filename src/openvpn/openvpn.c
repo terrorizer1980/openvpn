@@ -43,6 +43,8 @@
 
 #define P2P_CHECK_SIG() EVENT_LOOP_CHECK_SIGNAL(c, process_signal_p2p, c);
 
+static struct signal_info siginfo_initial;
+
 static bool
 process_signal_p2p(struct context *c)
 {
@@ -69,6 +71,10 @@ tunnel_point_to_point(struct context *c)
 
     /* initialize tunnel instance */
     init_instance_handle_signals(c, c->es, CC_HARD_USR1_TO_HUP);
+    if (siginfo_initial.signal_received)
+    {
+        *c->sig = siginfo_initial;
+    }
     if (IS_SIG(c))
     {
         return;
@@ -122,6 +128,7 @@ wait_for_stdin_close(void* _)
             perror("failed to read from stdin");
         }
     }
+    siginfo_initial.signal_received = SIGTERM;
     siginfo_static.signal_received = SIGTERM;
     return NULL;
 }
@@ -175,6 +182,7 @@ openvpn_main(int argc, char *argv[])
 #endif
 
     CLEAR(c);
+    CLEAR(siginfo_initial);
     start_shutdown_listener();
 
     /* signify first time for components which can
@@ -197,7 +205,7 @@ openvpn_main(int argc, char *argv[])
             context_clear_all_except_first_time(&c);
 
             /* static signal info object */
-            CLEAR(siginfo_static);
+            siginfo_static = siginfo_initial;
             c.sig = &siginfo_static;
 
             /* initialize garbage collector scoped to context object */
